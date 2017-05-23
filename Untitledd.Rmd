@@ -1,0 +1,625 @@
+---
+title: 'Take_home_Stats_test '
+author: "Nana  Boateng"
+date: '`r Sys.Date()`'
+Time: '`r Sys.time()`'
+output: html_document
+  #pdf_document: default
+---
+
+```{r setup, include=FALSE}
+list=c("tidyverse","stringr","forcats","ggmap","rvest","tm","SnowballC","dplyr","calibrate","doParallel",
+       "stringi","ggplot2","maps","httr","rsdmx","devtools","plyr","dplyr","ggplot2","caret","elasticnet",
+       "magrittr","broom","glmnet","Hmisc",'knitr',"RSQLite","RANN","lubridate","ggvis","plotly","lars",
+       "ggcorrplot","GGally","ROCR","lattice","car","corrgram","ggcorrplot","parallel","readxl","ggmosaic",
+       "vcd","Amelia","d3heatmap","ResourceSelection","ROCR","plotROC","DT","aod","mice","Hmisc","data.table","pls","plsdepot","gvlma","ggthemes","ggfortify","grid","ggpmisc")
+
+
+
+list_packages <- list
+new.packages <- list_packages[!(list_packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+R<-suppressWarnings(suppressMessages(sapply(list, require, character.only = TRUE)))
+
+setwd("/Users/nanaakwasiabayieboateng/Documents/memphisclassesbooks/DataMiningscience/UnitedAirlines")
+
+```
+
+
+```{r}
+library(readxl)
+# read_excel reads both xls and xlsx files
+uniteddata=read_excel("Take_home_Stats_test_Data.xlsx")
+DT::datatable(uniteddata)
+
+```
+
+
+
+
+##**Model One**
+For a unit change in X1 keeping X2 constant, the mean of Y increases by 2.149586 and 
+unit change in X2 keeping X1 constant, the mean of Y increases by 3.465170
+
+```{r}
+model1=glm(Y~X1+X2,data=uniteddata)
+
+broom::tidy(model1)
+```
+
+```{r}
+
+head(broom::augment(model1))
+```
+
+```{r}
+
+
+
+
+
+broom::glance(model1)
+```
+
+##**Exploratory Data Analysis**
+```{r}
+Y=uniteddata$Y
+X2=uniteddata$X2
+#formula <- y ~ poly(x, 3, raw = TRUE)
+formula <- Y ~ X2
+#formula <- y ~ poly(x, raw = TRUE)
+fill <- "#4271AE"
+line <- "#1F3552"
+
+#p <-
+  ggplot(uniteddata, aes(x=X1, y=Y)) + geom_point(shape=1) + geom_smooth(method=lm, se=FALSE) +
+      ggtitle(" regression line") +
+      scale_x_continuous(name = "X1") +
+      scale_y_continuous(name = "Y") +
+theme_economist() +
+      theme(axis.line.x = element_line(size=.5, colour = "black"),
+            axis.line.y = element_line(size=.5, colour = "black"),
+            axis.text.x=element_text(colour="black", size = 9),
+            axis.text.y=element_text(colour="black", size = 9),
+            panel.grid.major = element_line(colour = "#d3d3d3"),
+            panel.grid.minor = element_blank(),
+            panel.border = element_blank(), panel.background = element_blank(),
+            plot.title = element_text(family = "Tahoma"),
+            text=element_text(family="Tahoma"))+
+  stat_poly_eq(aes(label =  paste(..eq.label.., ..adj.rr.label.., sep = "~~~~")),
+                   formula = formula, rr.digits = 3, coef.digits = 2, parse = TRUE)
+#ggplotly(p)
+
+```
+
+
+
+```{r}
+Y=uniteddata$Y
+X2=uniteddata$X2
+formula <- Y ~ X2
+fill <- "#4271AE"
+line <- "#1F3552"
+
+ggplot(uniteddata, aes(x=X2, y=Y)) + geom_point(shape=1) + geom_smooth(method=lm, se=FALSE) +
+      ggtitle(" regression line") +
+      scale_x_continuous(name = "X1") +
+      scale_y_continuous(name = "Y") +
+      theme(axis.line.x = element_line(size=.5, colour = "black"),
+            axis.line.y = element_line(size=.5, colour = "black"),
+            axis.text.x=element_text(colour="black", size = 9),
+            axis.text.y=element_text(colour="black", size = 9),
+            panel.grid.major = element_line(colour = "#d3d3d3"),
+            panel.grid.minor = element_blank(),
+            panel.border = element_blank(), panel.background = element_blank(),
+            plot.title = element_text(family = "Tahoma"),
+            text=element_text(family="Tahoma"))+
+   stat_poly_eq(formula = y ~ x, eq.with.lhs=FALSE,
+      aes(label = paste("hat(italic(y))","~`=`~",..eq.label..,"~~~", ..rr.label.., sep = "")),parse = TRUE)
+
+```
+
+
+
+```{r}
+
+fill <- "#4271AE"
+line <- "#1F3552"
+
+p <-ggplot(uniteddata, aes(x=X1, y=Y)) + geom_point(shape=1) + geom_smooth(method=lm, se=FALSE) +
+      ggtitle(" regression line") +
+      scale_x_continuous(name = "X1") +
+      scale_y_continuous(name = "Y") +
+theme_economist() +
+      theme(axis.line.x = element_line(size=.5, colour = "black"),
+            axis.line.y = element_line(size=.5, colour = "black"),
+            axis.text.x=element_text(colour="black", size = 9),
+            axis.text.y=element_text(colour="black", size = 9),
+            panel.grid.major = element_line(colour = "#d3d3d3"),
+            panel.grid.minor = element_blank(),
+            panel.border = element_blank(), panel.background = element_blank(),
+            plot.title = element_text(family = "Tahoma"),
+            text=element_text(family="Tahoma"))
+ggplotly(p)
+
+```
+
+
+
+**Checking Regression Assumptions**
+1) The mean of the residual errors is close to 0.
+
+```{r}
+
+mean(model1$residuals)
+```
+```{r}
+#summary(model1)
+#model1$residuals
+#model1$fitted
+#dataplot=data_frame(residuals=model1$residuals,fitted=model1$fitted,stdred=model1$std.resid)
+par(mfrow = c(1, 2))
+library(ggfortify)
+
+ggplot2::autoplot(model1, which = 1:6, ncol = 3, label.size = F)+ theme_bw()
+
+```
+
+
+
+
+
+
+```{r}
+library(ggfortify)
+myfortdata = fortify(USArrests)
+myfortdata%>%head()%>%DT::datatable()
+#head(myfortdata)%>%head()%>%DT::datatable()
+
+dataplot=data_frame(residuals=model1$residuals,fitted=model1$fitted)
+
+p1<-ggplot(dataplot, aes(fitted, residuals))+geom_point()+
+    geom_smooth(method="loess")+geom_hline(yintercept=0, col="red", linetype="dashed")+
+    xlab("Fitted values")+ylab("Residuals")+
+    ggtitle("Residual vs Fitted Plot")+theme_bw()+geom_point(shape=1,color="purple")
+ggplotly(p1)
+```
+```{r}
+#===========================================================================
+# 
+# broom augment and cbind.data.frame  data add regression diagnostics to data
+#===========================================================================
+
+par(mfrow=c(2,2))
+myudata=cbind.data.frame(uniteddata,broom::augment(model1))
+p=ggplot(data = myudata, aes(x = .fitted, y = .resid)) +
+  geom_hline(yintercept = 0, colour = "firebrick3") +geom_smooth(method="loess")+
+ geom_point()+xlab("Fitted values")+ylab("Residuals")+ggtitle("Residual vs Fitted Plot")+theme_bw()
+ggplotly(p)
+
+#===========================================================================
+# 
+# fortify data add regression diagnostics to data
+#===========================================================================
+
+myundata= fortify(model1)
+
+pp=ggplot(data = myudata, aes(x = .fitted, y = .resid)) +
+  geom_hline(yintercept = 0, colour = "firebrick3") +
+  geom_point() +
+  geom_smooth(se = FALSE)+theme_bw()+
+  xlab("Fitted Values")+ylab("Residuals")+
+  ggtitle("Homoscedasticity assumption")
+ggplotly(pp)
+
+```
+
+```{r}
+myundata%>%head()
+```
+
+```{r}
+p2=ggplot(data = myundata, aes(sample = .stdresid)) +
+  stat_qq() +geom_abline(colour = "firebrick3")+
+    ggtitle("Theoritcal Quantiles/Normality assumption")+theme_bw()
+ggplotly(p2)
+```
+
+
+
+```{r}
+p3=ggplot(data = myundata, aes(x = .fitted, y = .stdresid)) +
+  geom_hline(yintercept = 0, colour = "firebrick3") +
+  geom_point()+ geom_smooth(se=T,method = 'loess')+theme_bw()+
+  ggtitle("Standadized Residuals vs Fitted")+
+  xlab("Fitted Value")+
+ylab((("Standardized residuals|")))
+ggplotly(p3)
+```
+
+
+
+
+```{r}
+p4=ggplot(data = myundata, aes(x = .hat, y = .stdresid)) +
+  geom_point() +
+  geom_smooth(se = FALSE,method = 'loess')+ geom_smooth(se=T,method = 'loess')+theme_bw()+
+  ggtitle("Residuals vs. leverages")+
+  xlab("Fitted Value")+
+ylab("Standardized residuals|")
+ggplotly(p4) 
+```
+
+
+
+
+
+
+
+
+```{r}
+# Points size reflecting Cook's distance
+p5=ggplot(data = myundata, aes(x = .fitted, y = .resid, size = .cooksd)) +
+  geom_hline(yintercept = 0, colour = "firebrick3") +
+  geom_point() +scale_size_area("Cook’s distance")+
+  ggtitle("Points size reflecting Cook's distance")+
+  theme_bw()+xlab("Fitted Values")+ylab("Residuals")
+ggplotly(p5) 
+```
+
+
+
+
+
+
+```{r}
+# Residuals vs. leverages with observation number
+p6=ggplot(data = myundata, aes(x = .hat, y = .stdresid)) +
+  geom_point() +
+  geom_smooth(se = FALSE,method = 'loess') +
+  geom_text(label = rownames(myundata), size = 4) +
+  geom_hline(yintercept = 2, lty = "dotted", colour = "slateblue1") +
+  geom_hline(yintercept = -2, lty = "dotted", colour = "slateblue1")+
+  theme_bw()+xlab("Fitted Values")+ylab("Standidized Residuals")+theme_bw()
+ggplotly(p6) 
+```
+
+
+
+```{r}
+p7=ggplot(data = myundata, aes(x =X1, y = Y)) +
+  geom_point() +
+  stat_smooth(method = "lm", formula = y ~ x + I(x^2), colour = "red", se = FALSE) +
+  stat_smooth(method = "lm", formula = y ~ x + I(x^2) + I(x^3), colour = "blue", se = FALSE)+
+  theme_bw()
+ggplotly(p7)
+```
+
+
+
+
+```{r}
+
+
+#we define our own function mean of log
+#and change geom to line
+meanlog <- function(y) {mean(log(y))}
+ggplot(myundata, aes(x=X1, y=Y)) + 
+  stat_summary(fun.y="meanlog", geom="line")
+```
+
+
+
+```{r}
+tp <- ggplot(myundata, aes(Y))+geom_density()
+tp
+
+```
+
+
+
+
+
+
+2) Homoscedasticity of residuals or equal variance. This assumption is satisfied by 
+normality of the residuals from the plots below.
+
+
+3)No autocorrelation of residuals present from the plot. the second line in the plot is close to 0.
+```{r}
+# Method 1: Visualise with acf plot
+
+acf(model1$residuals)
+
+```
+```{r}
+# Method 3: Durbin-Watson test
+lmtest::dwtest(model1)
+```
+
+5)The X variables and residuals are uncorrelated
+```{r}
+
+cor.test(uniteddata$X1, model1$residuals) 
+cor.test(uniteddata$X2, model1$residuals) 
+```
+
+5)The variability in X values is positive.The X variables in the sample must all not 
+be the same or nearly the same.
+
+
+```{r}
+var(uniteddata$X1)
+var(uniteddata$X2)
+```
+
+
+5) No perfect multicollinearity
+There is no perfect linear relationship between explanatory variables.The varianc einflation factor values is small(<10) for both explanatory variables signifying no problem with multicollinearity.
+```{r}
+vif(model1)
+```
+
+The correlation between X1 and X2 is very high (0.7111551). This  vilates the linear regression assumption.
+```{r}
+library(corrplot)
+corrplot(cor(uniteddata[, -c(1,2)]))
+```
+
+```{r}
+cor(uniteddata[, -c(1,2)])
+```
+
+Check assumptions automatically
+```{r}
+#par(mfrow=c(2,2))  # draw 4 plots in same window
+#library(gvlma)
+
+model=lm(Y~X1+X2,data=uniteddata)
+
+gvlma::gvlma(model)
+
+
+
+```
+
+
+```{r}
+#DT:datatable(influence.measures(mod))
+#DT::datatable(data.table(influence.measures(mod)))
+#data.table(influence.measures(mod))
+DT::datatable((influence.measures(model)$infmat))
+```
+
+
+
+
+
+
+##**Model Two**
+Principal components regression/Analysis or varoius forms of Factor Analysis can be used when the explanatory variables are correlated. 
+```{r}
+
+
+model2=pls::plsr(Y~X1+X2,data=uniteddata,ncomp=1)
+
+summary(model2)
+
+
+
+```
+
+
+```{r}
+3
+#biplot(model2)
+#plot(model2, plottype = "biplot")
+```
+
+
+```{r}
+library(plsdepot)
+model3=plsdepot::plsreg1(uniteddata[,3:4],uniteddata["Y"],comps=1, crosval=TRUE)
+
+
+plot(model3)
+```
+
+
+
+The chi-square statistic and p-value in factanal are testing the hypothesis that the model fits the data perfectly.
+About 77.3% of the variance explained by one factors is very high.
+```{r}
+factanal(uniteddata[,-1],1)
+```
+
+
+
+##**Model Two**
+The data here was restructured into three columns which are the number of trials(1,..13), Driving school(Yes/No ) and the Frequency of the number of Trials. 
+```{r}
+uniteddata2=data_frame(No.Trial=c(seq(1:13)),No=c(29,16,17,4,3,9,4,5,1,1,1,3,7)
+,Yes=c(198,107,55,38,18,22,7,9,5,3,6,6,12))
+ 
+
+m1=reshape2::melt(uniteddata2,id.vars ="No.Trial",variable.name ="Driving.school",value.name ="Frequency")                        
+m2= reshape2::dcast(reshape2::melt(uniteddata2,id.vars ="No.Trial"),No.Trial~variable )
+
+DT::datatable(m1)
+```
+Chisquare Test.
+```{r}
+xtabs(No.Trial~Driving.school+Frequency, data=m1)
+
+```
+
+```{r}
+chisq.test(xtabs(No.Trial~Driving.school+Frequency, data=m1),simulate.p.value = T)%>%tidy()
+
+```
+
+The frequency of those passing the driving test who attended a driving school is higher than 
+those who didn't attend a driving school. Attending a driving school increases your probability of passing a driving test.
+```{r}
+p=ggplot(m1, aes(No.Trial,Frequency, color=Driving.school)) + 
+  geom_line() + 
+  geom_point()+theme_bw()+xlab("Number of Trials")
+ggplotly(p)
+```
+
+
+a) Distribution plot of the Frequency of Number of trials for both those who had training from 
+driving school and those who didn't. The distribution is skewed to the right. A logarithmic 
+transformation could improve the skewness of the distribution.
+```{r}
+pq1=qplot( m1$Frequency, geom="histogram",binwidth = 2)+theme_minimal()+xlab("Number of Trials")
+ggplotly(pq1)
+```
+
+Taking log of the Frequency of Number of trials for both those who had training from 
+driving school and those who didn't. The regular assumption on the explanatory variables is that of normality.Even with the logarithmic transformation, the distribution doest appear to be normal. 
+```{r}
+pq=qplot(log( m1$Frequency), geom="histogram",binwidth = 0.5)+theme_minimal()+xlab("log(Number of Trials)")
+ggplotly(pq)
+```
+
+
+c)
+
+For a unit increase in the number of students  attending a driving-school driver to pass the test in a trial,the mean Frequency of passing thedriving test increases by 1.90802228 compared to those who did not attend driving school.
+ 
+```{r}
+model4=glm(log(Frequency)~(No.Trial)+Driving.school+No.Trial*Driving.school,data=m1)
+#summary(model4)
+
+broom::tidy(model4)
+
+
+
+
+```
+```{r}
+
+head(broom::augment(model4))
+
+
+```
+
+```{r}
+broom::glance(model4)
+```
+
+b)
+A logistic regression of whether a person attended driving school or not on the number of trials and frequency  of attempts in passing the driving test does  have  significant variables at a level of  0.05. The frequency of passing a test and the number of trials are significant at 0.05 level.
+```{r}
+index <- createDataPartition(m1$Driving.school,p=0.70, list=FALSE)
+
+trainSet <- m1[index,]
+
+testSet <- m1[-index,]
+
+
+
+model5=glm(Driving.school~No.Trial+log(Frequency),data=trainSet,family="binomial")
+
+
+
+knitr::kable(confint(model5))
+
+```
+
+```{r}
+tidy(model5)
+```
+
+For a unit increase in the frequency of a passing a dricing test, log odds of passing a driving test when one has taking a driving test test increases by about 200% compared to those who did not take the driving test.
+```{r}
+coef(model5)
+```
+
+
+The odds of passing a driving test when one has taking a driving test test increases by about 800% compared to those who did not take the driving test
+```{r}
+
+
+
+
+## odds ratios only)
+
+## odds ratios and 95% CI
+exp(cbind(OR = coef(model5), confint(model5)))
+
+
+```
+
+```{r}
+# Predict using the test data
+#testSet 
+pred<-predict(model5,testSet)
+
+
+# 
+# # Print, plot variable importance
+ print(varImp(model5, scale = FALSE))
+# 
+# plot(varImp(model5, scale = FALSE), main="Variable Importance using logistic/glm")
+# 
+# 
+# confusionMatrix(testSet$Hypertension,pred)
+
+```
+```{r}
+ my_data=data.frame(cbind(predicted=pred,observed=testSet$Driving.school))
+ 
+ggplot(my_data,aes(predicted,observed))+geom_point()+geom_smooth(method=lm)+ggtitle('logistic model')
+```
+
+
+
+
+```{r}
+predict <- predict(model5,testSet, type = 'response')
+
+pp=if_else(predict >0.5,"Yes","No")
+
+tab=table(testSet$Driving.school, pp)
+tab
+```
+
+```{r}
+predict <- predict(model5,testSet, type = 'response')
+
+predict=if_else(predict >0.5,"Yes","No")
+#predict
+data.frame(observed=testSet$Driving.school,predicted=predict)
+#cbind(m1$Driving.school, predict)
+
+```
+
+
+
+
+
+```{r}
+#==================================================================
+#ROCR Curve
+#==================================================================
+
+
+
+
+p <- ggplot(data.frame(trainSet), aes(d = as.numeric(Driving.school), m = Frequency)) + geom_roc()+ style_roc()
+
+
+plot_interactive_roc(p)
+
+```
+
+
+The probability of   be the probability of a no-driving-school driver to pass the test in a trial  ,Pn is 0.1706485  and Ps be the probability of a driving-school driver to pass the test in a trial is 0.8293515. This is nearly 5 times the rate for those not attending driving school.  
+```{r}
+tapply(m1$Frequency,m1$Driving.school, sum)/sum(m1$Frequency)
+```
+
+
